@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EdgeGuard AI - Sentinel SOC</title>
+    <style>
+        /* STRICT BRANDING variables (use only these) */
+        :root {
+            --color-primary-navy: #1A2B3C;
+            --color-primary-emerald: #0A3E3C;
+            --color-bg-white: #FFFFFF;
+            --color-bg-light-gray: #F5F5F5;
+            --color-bg-black: #000000;
+            --color-func-blue: #4A8B9D;
+            --color-func-green: #8EB998;
+            --color-func-peach: #E6A689;
+        }
+
+        body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; margin:0; background:var(--color-bg-light-gray); color:var(--color-bg-black); }
+        header { background:var(--color-primary-navy); color:var(--color-bg-white); padding:16px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:4px solid var(--color-primary-emerald); }
+        header h1 { margin:0; font-size:20px; }
+        header p { margin:0; opacity:0.9; font-size:12px; }
+
+        .layout { max-width:1200px; margin:20px auto; display:grid; grid-template-columns: 320px 1fr; gap:16px; padding:0 16px; }
+        .card { background:var(--color-bg-white); border-radius:8px; padding:12px; box-shadow:0 4px 10px rgba(0,0,0,0.06); }
+        .sidebar .status { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+        .status .dot { width:12px; height:12px; border-radius:50%; background:var(--color-func-green); display:inline-block; margin-right:8px; }
+        .btn { background:var(--color-primary-emerald); color:var(--color-bg-white); border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:600; }
+        .danger { background:var(--color-func-peach); color:#000; }
+
+        .log-box { height:360px; overflow:auto; background:#0b0b0b; color:var(--color-bg-white); padding:10px; border-radius:6px; font-family:monospace; font-size:13px; }
+        .log-item { padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+        .alert-item { padding:8px; border-radius:6px; margin-bottom:8px; background:linear-gradient(90deg, rgba(230,166,137,0.08), rgba(138,185,152,0.03)); }
+
+        .charts { display:flex; gap:12px; }
+        canvas { background:transparent; }
+
+        .top-actions { display:flex; gap:8px; align-items:center; }
+        .small { font-size:13px; opacity:0.9; }
+
+        .alerts-list { max-height:200px; overflow:auto; }
+
+        footer { text-align:center; color:#666; font-size:12px; padding:14px 0; }
+    </style>
+
+    <!-- CDN libs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+<header>
+    <div>
+        <h1>EdgeGuard AI</h1>
+        <p>Autonomous Sentinel — Dn Infosolution | SOC View</p>
+    </div>
+    <div style="text-align:right;">
+        <p style="margin:0;">System Status: <span style="color:var(--color-func-green); font-weight:700;">Surakshit</span></p>
+        <p style="margin:0; font-size:12px;">Real-time Endpoint Sentinel</p>
+    </div>
+</header>
+
+<div class="layout">
+    <div class="sidebar card">
+        <div class="status">
+            <div><span class="dot"></span> <strong>Endpoint</strong></div>
+            <div class="small">: <span id="sys-time">--</span></div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+            <button class="btn" onclick="refreshLogs()">Taaza Logs</button>
+            <button class="btn" style="margin-left:8px;" onclick="clearAlerts()">Clear Alerts</button>
+        </div>
+
+        <h3 style="margin-top:8px;"> Live Alerts</h3>
+        <div class="alerts-list" id="alertsList">
+            <div class="small">Koi alert nahi mila abhi.</div>
+        </div>
+
+        <hr style="margin:12px 0; opacity:0.06;" />
+
+        <h3>System Logs</h3>
+        <div class="log-box" id="logBox">
+            <div class="log-item">Loading logs...</div>
+        </div>
+    </div>
+
+    <div class="main card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="margin:0; color:var(--color-primary-emerald);">Dashboard — SOC Console</h2>
+            <div class="top-actions">
+                <div class="small">Real-time CPU Monitor</div>
+                <div style="width:12px;"></div>
+            </div>
+        </div>
+
+        <div style="margin-top:12px;" class="charts">
+            <div style="flex:1" class="card">
+                <canvas id="cpuChart" height="140"></canvas>
+            </div>
+            <div style="width:320px" class="card">
+                <h4 style="margin:6px 0;">Quick Metrics</h4>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <div>
+                        <div style="font-size:20px; font-weight:700;" id="cpuPct">--%</div>
+                        <div class="small">CPU</div>
+                    </div>
+                    <div>
+                        <div style="font-size:20px; font-weight:700;" id="memPct">--%</div>
+                        <div class="small">Memory</div>
+                    </div>
+                </div>
+
+                <hr style="margin:10px 0; opacity:0.06;" />
+                <h4 style="margin:6px 0;">Actions</h4>
+                <button class="btn danger" onclick="doSimulateKill()">Simulate Kill</button>
+                <div class="small" style="margin-top:8px;">Note: Simulation only. Actual kill can be enabled in server config.</div>
+            </div>
+        </div>
+
+        <div style="margin-top:12px;">
+            <h3>Event Timeline</h3>
+            <div id="timeline" style="max-height:180px; overflow:auto; padding:6px; border-radius:6px; border:1px dashed rgba(0,0,0,0.06); background:transparent;">
+                <div class="small">No events yet.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    EdgeGuard AI — Dn Infosolution · Lightweight EDR Demo · For Hackathon Use
+</footer>
+
+<script>
+    // SocketIO setup
+    const socket = io();
+
+    // Charts setup
+    const ctx = document.getElementById('cpuChart').getContext('2d');
+    const cpuData = { labels: [], datasets: [{ label: 'CPU %', borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-primary-emerald').trim(), backgroundColor: 'rgba(10,62,60,0.08)', data: [] }] };
+    const cpuChart = new Chart(ctx, {
+        type: 'line',
+        data: cpuData,
+        options: {
+            responsive: true,
+            animation: false,
+            scales: { y: { min: 0, max: 100 } }
+        }
+    });
+
+    function addToChart(cpu, mem) {
+        const now = new Date().toLocaleTimeString();
+        cpuData.labels.push(now);
+        cpuData.datasets[0].data.push(cpu);
+        if (cpuData.labels.length > 40) {
+            cpuData.labels.shift();
+            cpuData.datasets[0].data.shift();
+        }
+        cpuChart.update('none');
+        document.getElementById('cpuPct').innerText = cpu.toFixed(1) + '%';
+        document.getElementById('memPct').innerText = mem.toFixed(1) + '%';
+        document.getElementById('sys-time').innerText = now;
+    }
+
+    // UI helpers
+    function prependAlert(text) {
+        const box = document.getElementById('alertsList');
+        const div = document.createElement('div');
+        div.className = 'alert-item small';
+        div.innerText = text;
+        box.insertBefore(div, box.firstChild);
+    }
+    function prependTimeline(text) {
+        const box = document.getElementById('timeline');
+        const d = document.createElement('div');
+        d.className = 'small';
+        d.innerText = text;
+        box.insertBefore(d, box.firstChild);
+    }
+    function refreshLogs() {
+        fetch('/api/logs').then(r=>r.json()).then(data=>{
+            const logBox = document.getElementById('logBox');
+            logBox.innerHTML = '';
+            data.forEach(l => {
+                const div = document.createElement('div');
+                div.className = 'log-item';
+                div.innerText = `[${l.time}] ${l.level} - ${l.message}`;
+                logBox.appendChild(div);
+            });
+        }).catch(e=>console.error(e));
+    }
+    function clearAlerts() {
+        document.getElementById('alertsList').innerHTML = '<div class="small">Koi alert nahi mila abhi.</div>';
+    }
+
+    // Buttons
+    function doSimulateKill() {
+        prependTimeline('Simulated kill action requested (client-side).');
+        alert('Simulation mode: server must enable KILL_SUSPICIOUS to actually kill processes.');
+    }
+
+    // WebSocket events
+    socket.on('connect', () => {
+        prependTimeline('Connected to EdgeGuard socket.');
+    });
+
+    socket.on('metric', (m) => {
+        addToChart(m.cpu_percent, m.mem_percent);
+    });
+
+    socket.on('log', (l) => {
+        const logBox = document.getElementById('logBox');
+        const div = document.createElement('div');
+        div.className = 'log-item';
+        div.innerText = `[${l.time}] ${l.level} - ${l.message}`;
+        logBox.insertBefore(div, logBox.firstChild);
+    });
+
+    socket.on('alert', (a) => {
+        const text = `[${a.time}] ALERT: ${a.name || ''} ${a.message || ''}`;
+        prependAlert(text);
+        prependTimeline(text);
+    });
+
+    socket.on('fileguard_alert', (a) => {
+        const text = `[${a.time}] FILEGUARD ${a.level}: ${a.message}`;
+        prependAlert(text);
+        prependTimeline(text);
+    });
+
+    // Initial load
+    refreshLogs();
+</script>
+</body>
+</html>

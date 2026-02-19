@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Dn AI Shield",
+  "version": "1.0",
+  "description": "AI-Powered Firewall & Malware Blocker for Innovation Marathon",
+  "permissions": [
+    "webRequest",
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Dn AI Shield"
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    :root {
+      --color-primary-navy: #1A2B3C;
+      --color-primary-emerald: #0A3E3C;
+      --color-bg-light-gray: #F5F5F5;
+      --color-func-blue: #4A8B9D;
+      --color-func-peach: #E6A689;
+      --color-func-green: #8EB998;
+    }
+
+    body {
+      width: 320px;
+      padding: 15px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--color-bg-light-gray);
+      color: var(--color-primary-navy);
+      margin: 0;
+    }
+
+    .header {
+      background-color: var(--color-primary-navy);
+      color: white;
+      padding: 15px;
+      text-align: center;
+      border-radius: 8px 8px 0 0;
+      margin: -15px -15px 15px -15px;
+    }
+
+    .header h2 { margin: 0; font-size: 18px; }
+
+    .status-card {
+      background-color: var(--color-primary-emerald);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 15px;
+      border-left: 5px solid var(--color-func-blue);
+    }
+
+    .btn-scan {
+      background-color: var(--color-func-blue);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      width: 100%;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .btn-scan:hover {
+      background-color: var(--color-primary-navy);
+    }
+
+    #logs {
+      margin-top: 15px;
+      font-size: 12px;
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+    
+    .safe { color: var(--color-func-green); font-weight: bold; }
+    .danger { color: var(--color-func-peach); font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h2>🛡️ Dn AI Shield</h2>
+  </div>
+
+  <div class="status-card">
+    <h3 style="margin: 0;">Status: Active</h3>
+    <p style="margin: 5px 0 0 0; font-size: 12px;">AI Model is monitoring traffic</p>
+  </div>
+
+  <button class="btn-scan" id="manualScan">Scan Current Page</button>
+
+  <div id="logs">
+    <div><i>Awaiting network activity...</i></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

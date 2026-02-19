@@ -1,0 +1,52 @@
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import joblib
+
+print("Step 1: Nakli Network Data (Safe vs Malicious) generate kar rahe hain...")
+# Features: [Packet Length, TCP_Flag, UDP_Flag, Time_Delta]
+
+# Safe traffic (Label 0): Normal size, mostly TCP, steady timing
+safe_data = np.random.normal(loc=[500, 1, 0, 0.5], scale=[100, 0, 0.1, 0.1], size=(5000, 4))
+safe_labels = np.zeros(5000)
+
+# Attack traffic (Label 1): DDoS/Port Scan - small size, high frequency, random protocols
+attack_data = np.random.normal(loc=[60, 0.5, 0.5, 0.01], scale=[20, 0.5, 0.5, 0.05], size=(2000, 4))
+attack_labels = np.ones(2000)
+
+# Data ko mix kar rahe hain
+X = np.vstack((safe_data, attack_data))
+y = np.concatenate((safe_labels, attack_labels))
+
+# Values clean kar rahe hain (Negative size nahi ho sakti)
+X = np.abs(X)
+
+print("Step 2: Data Preprocessing chal rahi hai...")
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+# Scaler ko save kar rahe hain taki Firewall engine real-time me use kar sake
+joblib.dump(scaler, 'scaler.pkl') 
+
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+print("Step 3: Deep Learning Model ban raha hai...")
+model = Sequential([
+    Dense(16, activation='relu', input_shape=(4,)),
+    Dropout(0.2),
+    Dense(8, activation='relu'),
+    # Binary classification: 0 matlab Safe, 1 matlab Attack
+    Dense(1, activation='sigmoid') 
+])
+
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+print("Step 4: Model Training shuru ho gayi hai...")
+model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+
+print("Step 5: Model Save ho raha hai...")
+model.save('firewall_model.h5')
+print("✅ Badhai ho! Model train ho gaya aur 'firewall_model.h5' ke naam se save ho gaya!")

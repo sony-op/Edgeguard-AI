@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "AI Firewall",
+  "version": "1.0",
+  "permissions": [
+    "webRequest",
+    "activeTab",
+    "notifications"
+  ]
+}
